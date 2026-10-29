@@ -1,0 +1,62 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  JELLYFIN_REF: v10.11.11
+  PATCH_FILE: patches/10.11.11-strm-fresh-directoryservice.patch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout patch repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Clone Jellyfin ${{ env.JELLYFIN_REF }}
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "$JELLYFIN_REF" https://github.com/jellyfin/jellyfin.git upstream
+          cd upstream
+          echo "upstream commit: $(git rev-parse HEAD)"
+
+      - name: Apply patch
+        shell: bash
+        run: |
+          cd upstream
+          git apply --check --verbose "../$PATCH_FILE"
+          git apply "../$PATCH_FILE"
+          git diff --stat
+
+      - name: Build Emby.Server.Implementations
+        working-directory: upstream
+        run: dotnet build Emby.Server.Implementations/Emby.Server.Implementations.csproj -c Release --nologo
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="upstream/Emby.Server.Implementations/bin/Release/net9.0"
+          mkdir -p out
+          cp "$SRC/Emby.Server.Implementations.dll" out/
+          cp "$SRC/Emby.Server.Implementations.pdb" out/ || true
+          cd out
+          sha256sum Emby.Server.Implementations.dll > Emby.Server.Implementations.dll.sha256
+          cat Emby.Server.Implementations.dll.sha256
+          ls -l
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emby.Server.Implementations-10.11.11-strm-subtitle-fix
+          path: out/*
+          if-no-files-found: error
