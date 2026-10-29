@@ -1,0 +1,70 @@
+name: build-12.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'patches/12.4-strm-fresh-directoryservice.patch'
+      - '.github/workflows/build-12.4.yml'
+  workflow_dispatch:
+
+env:
+  JELLYFIN_REF: v12.4
+  PATCH_FILE: patches/12.4-strm-fresh-directoryservice.patch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout patch repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Clone Jellyfin ${{ env.JELLYFIN_REF }}
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "$JELLYFIN_REF" https://github.com/jellyfin/jellyfin.git upstream
+          cd upstream
+          echo "upstream commit: $(git rev-parse HEAD)"
+
+      - name: Apply patch
+        shell: bash
+        run: |
+          cd upstream
+          git apply --check --verbose "../$PATCH_FILE"
+          git apply "../$PATCH_FILE"
+          git diff --stat
+
+      - name: Build Emby.Server.Implementations
+        working-directory: upstream
+        run: dotnet build Emby.Server.Implementations/Emby.Server.Implementations.csproj -c Release --nologo
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="upstream/Emby.Server.Implementations/bin/Release/net10.0"
+          mkdir -p out
+          cp "$SRC/Emby.Server.Implementations.dll" out/
+          cp "$SRC/Emby.Server.Implementations.pdb" out/ || true
+          cd out
+          sha256sum Emby.Server.Implementations.dll > Emby.Server.Implementations.dll.sha256
+          cat Emby.Server.Implementations.dll.sha256
+          ls -l
+
+      - name: Report assembly version
+        shell: pwsh
+        run: |
+          $n = [System.Reflection.AssemblyName]::GetAssemblyName("$PWD/out/Emby.Server.Implementations.dll")
+          "assembly version: $($n.Version)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emby.Server.Implementations-12.4-strm-subtitle-fix
+          path: out/*
+          if-no-files-found: error
