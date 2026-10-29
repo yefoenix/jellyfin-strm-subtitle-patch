@@ -23,15 +23,21 @@ No public API changes — `MediaSourceManager` is an internal implementation cla
 
 ## Prebuilt download
 
-[Release `v10.11.11-fix.1`](https://github.com/yefoenix/jellyfin-strm-subtitle-patch/releases/tag/v10.11.11-fix.1) — `Emby.Server.Implementations.dll` (assembly version `10.11.11.0`), `.pdb`, and SHA-256.
+| Jellyfin | Release | Assembly version | SHA-256 |
+|---|---|---|---|
+| 10.11.11 | [`v10.11.11-fix.1`](https://github.com/yefoenix/jellyfin-strm-subtitle-patch/releases/tag/v10.11.11-fix.1) | `10.11.11.0` | `d2bfdab55e240a5c5c58507e472db102868ca5cbfa44e253e5c6c6ef4ceaec8a` |
+| 12.4 | [`v12.4-fix.1`](https://github.com/yefoenix/jellyfin-strm-subtitle-patch/releases/tag/v12.4-fix.1) | `12.4.0.0` | `0ccfbf69252690ce7fbe1308d0d06e018b894f972198db8a71d78862099520d1` |
 
-```
-d2bfdab55e240a5c5c58507e472db102868ca5cbfa44e253e5c6c6ef4ceaec8a  Emby.Server.Implementations.dll
-```
+Each release ships `Emby.Server.Implementations.dll`, `.pdb` and the `.sha256` file. The DLL is version-specific — do not mix a 12.4 build into a 10.11 install or vice versa.
 
 ## Build
 
-GitHub Actions builds it on `windows-latest`: clone `jellyfin/jellyfin` at tag `v10.11.11`, apply the patch, `dotnet build Emby.Server.Implementations -c Release`, upload `Emby.Server.Implementations.dll` + `.pdb` + SHA-256 as artifacts.
+GitHub Actions builds each version on `windows-latest`: clone `jellyfin/jellyfin` at the pinned tag, apply the matching patch, `dotnet build Emby.Server.Implementations -c Release`, upload `Emby.Server.Implementations.dll` + `.pdb` + SHA-256 as artifacts.
+
+| Workflow | Upstream tag | SDK | Patch |
+|---|---|---|---|
+| `build.yml` | `v10.11.11` | .NET 9 | `patches/10.11.11-strm-fresh-directoryservice.patch` |
+| `build-12.4.yml` | `v12.4` | .NET 10 | `patches/12.4-strm-fresh-directoryservice.patch` |
 
 Only this one project is built. The whole server is not rebuilt.
 
