@@ -21,6 +21,14 @@ For `.strm` items only, the playback-time refresh gets a **fresh** `DirectorySer
 
 No public API changes — `MediaSourceManager` is an internal implementation class and the assembly version stays `10.11.11` (`SharedVersion.cs` at the tag).
 
+## Prebuilt download
+
+[Release `v10.11.11-fix.1`](https://github.com/yefoenix/jellyfin-strm-subtitle-patch/releases/tag/v10.11.11-fix.1) — `Emby.Server.Implementations.dll` (assembly version `10.11.11.0`), `.pdb`, and SHA-256.
+
+```
+d2bfdab55e240a5c5c58507e472db102868ca5cbfa44e253e5c6c6ef4ceaec8a  Emby.Server.Implementations.dll
+```
+
 ## Build
 
 GitHub Actions builds it on `windows-latest`: clone `jellyfin/jellyfin` at tag `v10.11.11`, apply the patch, `dotnet build Emby.Server.Implementations -c Release`, upload `Emby.Server.Implementations.dll` + `.pdb` + SHA-256 as artifacts.
